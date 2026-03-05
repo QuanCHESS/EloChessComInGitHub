@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess.com ELO & Khai Cuộc Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            color: #f1f1f1;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background-color: rgba(30, 30, 46, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+            overflow: hidden;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00b09b, #96c93d);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .subtitle {
+            color: #aaa;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+        
+        .api-section {
+            background: rgba(40, 40, 60, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .api-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .api-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 15px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .api-btn {
+            padding: 12px 25px;
+            background: linear-gradient(90deg, #00b09b, #96c93d);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        
+        .api-btn:hover {
+            background: linear-gradient(90deg, #009688, #7cb342);
+            transform: translateY(-3px);
+        }
+        
+        .api-status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .api-status.success {
+            background-color: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            color: #4CAF50;
+            display: block;
+        }
+        
+        .api-status.error {
+            background-color: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+            color: #F44336;
+            display: block;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .profile-section {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(40, 40, 60, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .profile-img-container {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 5px solid #00b09b;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .profile-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .profile-img-update {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            text-align: center;
+            padding: 8px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .profile-img-container:hover .profile-img-update {
+            opacity: 1;
+        }
+        
+        .username {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            color: #fff;
+        }
+        
+        .player-title {
+            display: inline-block;
+            background: linear-gradient(90deg, #FFD700, #FFA500);
+            color: #333;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .profile-info {
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        .profile-info p {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+        
+        .profile-info i {
+            width: 20px;
+            margin-right: 10px;
+            color: #00b09b;
+        }
+        
+        .stats-grid {
+            flex: 2;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        .elo-section {
+            background: rgba(40, 40, 60, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            color: #00b09b;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0, 176, 155, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .elo-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .elo-category {
+            background: rgba(50, 50, 70, 0.9);
+            border-radius: 12px;
+            padding: 20px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border-left: 4px solid #00b09b;
+        }
+        
+        .elo-category:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .elo-category.rapid {
+            border-left-color: #4CAF50;
+        }
+        
+        .elo-category.blitz {
+            border-left-color: #FF9800;
+        }
+        
+        .elo-category.bullet {
+            border-left-color: #F44336;
+        }
+        
+        .elo-category.daily {
+            border-left-color: #9C27B0;
+        }
+        
+        .elo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .elo-type {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .elo-icon {
+            font-size: 1.5rem;
+        }
+        
+        .elo-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .elo-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+        
+        .elo-progress {
+            margin-top: 15px;
+            height: 8px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .elo-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00b09b, #96c93d);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 1s ease-in-out;
+        }
+        
+        /* Phần khai cuộc */
+        .openings-section {
+            background: rgba(40, 40, 60, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .openings-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tab-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 8px;
+            color: #aaa;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        
+        .tab-btn.active {
+            background: #00b09b;
+            color: white;
+        }
+        
+        .tab-btn:hover {
+            background: rgba(0, 176, 155, 0.5);
+            color: white;
+        }
+        
+        .openings-content {
+            min-height: 300px;
+        }
+        
+        .opening-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .opening-card {
+            background: rgba(50, 50, 70, 0.9);
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 3px solid #00b09b;
+        }
+        
+        .opening-name {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #00b09b;
+        }
+        
+        .opening-eco {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+        
+        .opening-stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .opening-percent {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .opening-percent-bar {
+            height: 100%;
+            border-radius: 2px;
+        }
+        
+        .win-bar { background: #4CAF50; }
+        .draw-bar { background: #FFC107; }
+        .loss-bar { background: #F44336; }
+        
+        .opening-chart {
+            margin-top: 20px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, #00b09b, #96c93d);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(90deg, #009688, #7cb342);
+            transform: translateY(-3px);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+        
+        .update-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: transform 0.5s, opacity 0.5s;
+            z-index: 1000;
+        }
+        
+        .update-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #00b09b;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .openings-summary {
+            background: rgba(50, 50, 70, 0.9);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .summary-item {
+            text-align: center;
+        }
+        
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00b09b;
+        }
+        
+        .summary-label {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 2rem;
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .elo-display {
+                grid-template-columns: 1fr;
+            }
+            
+            .api-input-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-chess-knight"></i> Chess.com ELO & Khai Cuộc Tracker <i class="fas fa-chart-line"></i></h1>
+            <p class="subtitle">Phân tích chỉ số ELO, khai cuộc và thống kê chi tiết từ Chess.com</p>
+        </header>
+        
+        <div class="api-section">
+            <div class="api-input-group">
+                <input type="text" id="chessUsername" class="api-input" placeholder="Nhập tên người dùng Chess.com (ví dụ: hikaru)" value="hikaru">
+                <button id="fetchDataBtn" class="api-btn">
+                    <i class="fas fa-download"></i> Lấy dữ liệu
+                </button>
+            </div>
+            <div id="apiStatus" class="api-status"></div>
+        </div>
+        
+        <div class="loading" id="loadingIndicator">
+            <div class="loading-spinner"></div>
+            <p>Đang tải dữ liệu từ Chess.com...</p>
+        </div>
+        
+        <div class="main-content" id="mainContent" style="display: none;">
+            <div class="profile-section">
+                <div class="profile-img-container">
+                    <img id="profileImg" src="" alt="Profile Image" class="profile-img">
+                    <div class="profile-img-update">Từ Chess.com</div>
+                </div>
+                
+                <h2 id="username" class="username">ChessPlayer</h2>
+                <div id="playerTitle" class="player-title">Thành viên</div>
+                
+                <div class="profile-info">
+                    <p><i class="fas fa-calendar-alt"></i> Tham gia: <span id="joinDate">Đang tải...</span></p>
+                    <p><i class="fas fa-globe"></i> Quốc gia: <span id="country">Đang tải...</span></p>
+                    <p><i class="fas fa-trophy"></i> Danh hiệu: <span id="highestTitle">Đang tải...</span></p>
+                    <p><i class="fas fa-link"></i> Hồ sơ: <a id="profileLink" href="#" target="_blank">Xem trên Chess.com</a></p>
+                </div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="elo-section">
+                    <h3 class="section-title"><i class="fas fa-chart-line"></i> CHỈ SỐ ELO CHESS.COM</h3>
+                    
+                    <div class="elo-display">
+                        <div class="elo-category rapid">
+                            <div class="elo-header">
+                                <div class="elo-type">Rapid</div>
+                                <div class="elo-icon"><i class="fas fa-clock"></i></div>
+                            </div>
+                            <div id="rapidElo" class="elo-value">-</div>
+                            <div class="elo-stats">
+                                <span id="rapidGames">Trò chơi: 0</span>
+                                <span id="rapidBest">Tốt nhất: 0</span>
+                            </div>
+                            <div class="elo-progress">
+                                <div id="rapidProgress" class="elo-progress-bar"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="elo-category blitz">
+                            <div class="elo-header">
+                                <div class="elo-type">Blitz</div>
+                                <div class="elo-icon"><i class="fas fa-bolt"></i></div>
+                            </div>
+                            <div id="blitzElo" class="elo-value">-</div>
+                            <div class="elo-stats">
+                                <span id="blitzGames">Trò chơi: 0</span>
+                                <span id="blitzBest">Tốt nhất: 0</span>
+                            </div>
+                            <div class="elo-progress">
+                                <div id="blitzProgress" class="elo-progress-bar"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="elo-category bullet">
+                            <div class="elo-header">
+                                <div class="elo-type">Bullet</div>
+                                <div class="elo-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            </div>
+                            <div id="bulletElo" class="elo-value">-</div>
+                            <div class="elo-stats">
+                                <span id="bulletGames">Trò chơi: 0</span>
+                                <span id="bulletBest">Tốt nhất: 0</span>
+                            </div>
+                            <div class="elo-progress">
+                                <div id="bulletProgress" class="elo-progress-bar"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="elo-category daily">
+                            <div class="elo-header">
+                                <div class="elo-type">Daily</div>
+                                <div class="elo-icon"><i class="fas fa-calendar-day"></i></div>
+                            </div>
+                            <div id="dailyElo" class="elo-value">-</div>
+                            <div class="elo-stats">
+                                <span id="dailyGames">Trò chơi: 0</span>
+                                <span id="dailyBest">Tốt nhất: 0</span>
+                            </div>
+                            <div class="elo-progress">
+                                <div id="dailyProgress" class="elo-progress-bar"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="openings-section">
+                    <h3 class="section-title"><i class="fas fa-chess-board"></i> PHÂN TÍCH KHAI CUỘC</h3>
+                    
+                    <div class="openings-tabs">
+                        <button class="tab-btn active" data-time="all">Tất cả</button>
+                        <button class="tab-btn" data-time="rapid">Rapid</button>
+                        <button class="tab-btn" data-time="blitz">Blitz</button>
+                        <button class="tab-btn" data-time="bullet">Bullet</button>
+                    </div>
+                    
+                    <div class="openings-content" id="openingsContent">
+                        <div class="openings-summary">
+                            <div class="summary-stats">
+                                <div class="summary-item">
+                                    <div class="summary-value" id="totalOpenings">0</div>
+                                    <div class="summary-label">Tổng số khai cuộc</div>
+                                </div>
+                                <div class="summary-item">
+                                    <div class="summary-value" id="winRate">0%</div>
+                                    <div class="summary-label">Tỉ lệ thắng</div>
+                                </div>
+                                <div class="summary-item">
+                                    <div class="summary-value" id="drawRate">0%</div>
+                                    <div class="summary-label">Tỉ lệ hòa</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="opening-stats" id="openingStatsList">
+                            <!-- Dữ liệu khai cuộc sẽ được thêm vào đây -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="autoRefreshBtn" class="btn btn-primary">
+                <i class="fas fa-sync-alt"></i> Bật tự động cập nhật (30s)
+            </button>
+            <button id="manualRefreshBtn" class="btn btn-secondary">
+                <i class="fas fa-redo"></i> Làm mới thủ công
+            </button>
+        </div>
+        
+        <div class="github-link">
+            <p>Dữ liệu được cung cấp bởi <a href="https://www.chess.com" target="_blank">Chess.com Public API</a></p>
+        </div>
+    </div>
+    
+    <div id="updateNotification" class="update-notification">
+        <i class="fas fa-check-circle"></i>
+        <span>Đã cập nhật thông tin thành công!</span>
+    </div>
+    
+    <script>
+        // DOM Elements
+        const chessUsernameInput = document.getElementById('chessUsername');
+        const fetchDataBtn = document.getElementById('fetchDataBtn');
+        const apiStatus = document.getElementById('apiStatus');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const mainContent = document.getElementById('mainContent');
+        
+        // Profile Elements
+        const profileImg = document.getElementById('profileImg');
+        const username = document.getElementById('username');
+        const playerTitle = document.getElementById('playerTitle');
+        const joinDate = document.getElementById('joinDate');
+        const country = document.getElementById('country');
+        const highestTitle = document.getElementById('highestTitle');
+        const profileLink = document.getElementById('profileLink');
+        
+        // ELO Elements
+        const rapidElo = document.getElementById('rapidElo');
+        const blitzElo = document.getElementById('blitzElo');
+        const bulletElo = document.getElementById('bulletElo');
+        const dailyElo = document.getElementById('dailyElo');
+        
+        // Stats Elements
+        const rapidGames = document.getElementById('rapidGames');
+        const rapidBest = document.getElementById('rapidBest');
+        const blitzGames = document.getElementById('blitzGames');
+        const blitzBest = document.getElementById('blitzBest');
+        const bulletGames = document.getElementById('bulletGames');
+        const bulletBest = document.getElementById('bulletBest');
+        const dailyGames = document.getElementById('dailyGames');
+        const dailyBest = document.getElementById('dailyBest');
+        
+        // Progress Bars
+        const rapidProgress = document.getElementById('rapidProgress');
+        const blitzProgress = document.getElementById('blitzProgress');
+        const bulletProgress = document.getElementById('bulletProgress');
+        const dailyProgress = document.getElementById('dailyProgress');
+        
+        // Opening Elements
+        const totalOpenings = document.getElementById('totalOpenings');
+        const winRate = document.getElementById('winRate');
+        const drawRate = document.getElementById('drawRate');
+        const openingStatsList = document.getElementById('openingStatsList');
+        
+        const lastUpdateTime = document.getElementById('lastUpdateTime');
+        const updateNotification = document.getElementById('updateNotification');
+        const autoRefreshBtn = document.getElementById('autoRefreshBtn');
+        const manualRefreshBtn = document.getElementById('manualRefreshBtn');
+        
+        // Biến toàn cục
+        let currentUsername = '';
+        let autoRefreshInterval = null;
+        let isAutoRefreshActive = false;
+        let currentTimeFilter = 'all';
+        let gameArchive = [];
+        let openingsData = {};
+        
+        // Dữ liệu khai cuộc mẫu (ECO codes)
+        const ecoDatabase = {
+            'A00': 'Khởi đầu không thông dụng',
+            'A01': 'Nimzowitsch-Larsen Attack',
+            'A02': 'Bird\'s Opening',
+            'A03': 'Bird\'s Opening',
+            'A04': 'Réti Opening',
+            'A05': 'Réti Opening',
+            'A06': 'Réti Opening',
+            'A07': 'King\'s Indian Attack',
+            'A08': 'King\'s Indian Attack',
+            'A09': 'Réti Opening',
+            'A10': 'English Opening',
+            'A11': 'English Opening',
+            'A12': 'English Opening',
+            'A13': 'English Opening',
+            'A14': 'English Opening',
+            'A15': 'English Opening',
+            'A16': 'English Opening',
+            'A17': 'English Opening',
+            'A18': 'English Opening',
+            'A19': 'English Opening',
+            'A20': 'English Opening',
+            'A21': 'English Opening',
+            'A22': 'English Opening',
+            'A23': 'English Opening',
+            'A24': 'English Opening',
+            'A25': 'English Opening',
+            'A26': 'English Opening',
+            'A27': 'English Opening',
+            'A28': 'English Opening',
+            'A29': 'English Opening',
+            'A30': 'English Opening',
+            'A31': 'English Opening',
+            'A32': 'English Opening',
+            'A33': 'English Opening',
+            'A34': 'English Opening',
+            'A35': 'English Opening',
+            'A36': 'English Opening',
+            'A37': 'English Opening',
+            'A38': 'English Opening',
+            'A39': 'English Opening',
+            'A40': 'Queen\'s Pawn Game',
+            'A41': 'Queen\'s Pawn Game',
+            'A42': 'Queen\'s Pawn Game',
+            'A43': 'Old Benoni',
+            'A44': 'Old Benoni',
+            'A45': 'Queen\'s Pawn Game',
+            'A46': 'Queen\'s Pawn Game',
+            'A47': 'Queen\'s Pawn Game',
+            'A48': 'King\'s Indian',
+            'A49': 'King\'s Indian',
+            'A50': 'Queen\'s Pawn Game',
+            'A51': 'Budapest Gambit',
+            'A52': 'Budapest Gambit',
+            'A53': 'Old Indian',
+            'A54': 'Old Indian',
+            'A55': 'Old Indian',
+            'A56': 'Benoni',
+            'A57': 'Benoni',
+            'A58': 'Benoni',
+            'A59': 'Benoni',
+            'A60': 'Benoni',
+            'A61': 'Benoni',
+            'A62': 'Benoni',
+            'A63': 'Benoni',
+            'A64': 'Benoni',
+            'A65': 'Benoni',
+            'A66': 'Benoni',
+            'A67': 'Benoni',
+            'A68': 'Benoni',
+            'A69': 'Benoni',
+            'A70': 'Benoni',
+            'A71': 'Benoni',
+            'A72': 'Benoni',
+            'A73': 'Benoni',
+            'A74': 'Benoni',
+            'A75': 'Benoni',
+            'A76': 'Benoni',
+            'A77': 'Benoni',
+            'A78': 'Benoni',
+            'A79': 'Benoni',
+            'A80': 'Dutch',
+            'A81': 'Dutch',
+            'A82': 'Dutch',
+            'A83': 'Dutch',
+            'A84': 'Dutch',
+            'A85': 'Dutch',
+            'A86': 'Dutch',
+            'A87': 'Dutch',
+            'A88': 'Dutch',
+            'A89': 'Dutch',
+            'A90': 'Dutch',
+            'A91': 'Dutch',
+            'A92': 'Dutch',
+            'A93': 'Dutch',
+            'A94': 'Dutch',
+            'A95': 'Dutch',
+            'A96': 'Dutch',
+            'A97': 'Dutch',
+            'A98': 'Dutch',
+            'A99': 'Dutch',
+            'B00': 'King\'s Pawn Opening',
+            'B01': 'Scandinavian',
+            'B02': 'Alekhine\'s Defense',
+            'B03': 'Alekhine\'s Defense',
+            'B04': 'Alekhine\'s Defense',
+            'B05': 'Alekhine\'s Defense',
+            'B06': 'Robatsch',
+            'B07': 'Pirc',
+            'B08': 'Pirc',
+            'B09': 'Pirc',
+            'B10': 'Caro-Kann',
+            'B11': 'Caro-Kann',
+            'B12': 'Caro-Kann',
+            'B13': 'Caro-Kann',
+            'B14': 'Caro-Kann',
+            'B15': 'Caro-Kann',
+            'B16': 'Caro-Kann',
+            'B17': 'Caro-Kann',
+            'B18': 'Caro-Kann',
+            'B19': 'Caro-Kann',
+            'B20': 'Sicilian',
+            'B21': 'Sicilian',
+            'B22': 'Sicilian',
+            'B23': 'Sicilian',
+            'B24': 'Sicilian',
+            'B25': 'Sicilian',
+            'B26': 'Sicilian',
+            'B27': 'Sicilian',
+            'B28': 'Sicilian',
+            'B29': 'Sicilian',
+            'B30': 'Sicilian',
+            'B31': 'Sicilian',
+            'B32': 'Sicilian',
+            'B33': 'Sicilian',
+            'B34': 'Sicilian',
+            'B35': 'Sicilian',
+            'B36': 'Sicilian',
+            'B37': 'Sicilian',
+            'B38': 'Sicilian',
+            'B39': 'Sicilian',
+            'B40': 'Sicilian',
+            'B41': 'Sicilian',
+            'B42': 'Sicilian',
+            'B43': 'Sicilian',
+            'B44': 'Sicilian',
+            'B45': 'Sicilian',
+            'B46': 'Sicilian',
+            'B47': 'Sicilian',
+            'B48': 'Sicilian',
+            'B49': 'Sicilian',
+            'B50': 'Sicilian',
+            'B51': 'Sicilian',
+            'B52': 'Sicilian',
+            'B53': 'Sicilian',
+            'B54': 'Sicilian',
+            'B55': 'Sicilian',
+            'B56': 'Sicilian',
+            'B57': 'Sicilian',
+            'B58': 'Sicilian',
+            'B59': 'Sicilian',
+            'B60': 'Sicilian',
+            'B61': 'Sicilian',
+            'B62': 'Sicilian',
+            'B63': 'Sicilian',
+            'B64': 'Sicilian',
+            'B65': 'Sicilian',
+            'B66': 'Sicilian',
+            'B67': 'Sicilian',
+            'B68': 'Sicilian',
+            'B69': 'Sicilian',
+            'B70': 'Sicilian',
+            'B71': 'Sicilian',
+            'B72': 'Sicilian',
+            'B73': 'Sicilian',
+            'B74': 'Sicilian',
+            'B75': 'Sicilian',
+            'B76': 'Sicilian',
+            'B77': 'Sicilian',
+            'B78': 'Sicilian',
+            'B79': 'Sicilian',
+            'B80': 'Sicilian',
+            'B81': 'Sicilian',
+            'B82': 'Sicilian',
+            'B83': 'Sicilian',
+            'B84': 'Sicilian',
+            'B85': 'Sicilian',
+            'B86': 'Sicilian',
+            'B87': 'Sicilian',
+            'B88': 'Sicilian',
+            'B89': 'Sicilian',
+            'B90': 'Sicilian',
+            'B91': 'Sicilian',
+            'B92': 'Sicilian',
+            'B93': 'Sicilian',
+            'B94': 'Sicilian',
+            'B95': 'Sicilian',
+            'B96': 'Sicilian',
+            'B97': 'Sicilian',
+            'B98': 'Sicilian',
+            'B99': 'Sicilian',
+            'C00': 'French Defense',
+            'C01': 'French Defense',
+            'C02': 'French Defense',
+            'C03': 'French Defense',
+            'C04': 'French Defense',
+            'C05': 'French Defense',
+            'C06': 'French Defense',
+            'C07': 'French Defense',
+            'C08': 'French Defense',
+            'C09': 'French Defense',
+            'C10': 'French Defense',
+            'C11': 'French Defense',
+            'C12': 'French Defense',
+            'C13': 'French Defense',
+            'C14': 'French Defense',
+            'C15': 'French Defense',
+            'C16': 'French Defense',
+            'C17': 'French Defense',
+            'C18': 'French Defense',
+            'C19': 'French Defense',
+            'C20': 'King\'s Pawn Game',
+            'C21': 'Center Game',
+            'C22': 'Center Game',
+            'C23': 'Bishop\'s Opening',
+            'C24': 'Bishop\'s Opening',
+            'C25': 'Vienna Game',
+            'C26': 'Vienna Game',
+            'C27': 'Vienna Game',
+            'C28': 'Vienna Game',
+            'C29': 'Vienna Game',
+            'C30': 'King\'s Gambit',
+            'C31': 'King\'s Gambit',
+            'C32': 'King\'s Gambit',
+            'C33': 'King\'s Gambit',
+            'C34': 'King\'s Gambit',
+            'C35': 'King\'s Gambit',
+            'C36': 'King\'s Gambit',
+            'C37': 'King\'s Gambit',
+            'C38': 'King\'s Gambit',
+            'C39': 'King\'s Gambit',
+            'C40': 'King\'s Knight Opening',
+            'C41': 'Philidor Defense',
+            'C42': 'Petrov Defense',
+            'C43': 'Petrov Defense',
+            'C44': 'King\'s Pawn Game',
+            'C45': 'Scotch Game',
+            'C46': 'Three Knights',
+            'C47': 'Four Knights',
+            'C48': 'Four Knights',
+            'C49': 'Four Knights',
+            'C50': 'Italian Game',
+            'C51': 'Evans Gambit',
+            'C52': 'Evans Gambit',
+            'C53': 'Italian Game',
+            'C54': 'Italian Game',
+            'C55': 'Two Knights Defense',
+            'C56': 'Two Knights Defense',
+            'C57': 'Two Knights Defense',
+            'C58': 'Two Knights Defense',
+            'C59': 'Two Knights Defense',
+            'C60': 'Ruy Lopez',
+            'C61': 'Ruy Lopez',
+            'C62': 'Ruy Lopez',
+            'C63': 'Ruy Lopez',
+            'C64': 'Ruy Lopez',
+            'C65': 'Ruy Lopez',
+            'C66': 'Ruy Lopez',
+            'C67': 'Ruy Lopez',
+            'C68': 'Ruy Lopez',
+            'C69': 'Ruy Lopez',
+            'C70': 'Ruy Lopez',
+            'C71': 'Ruy Lopez',
+            'C72': 'Ruy Lopez',
+            'C73': 'Ruy Lopez',
+            'C74': 'Ruy Lopez',
+            'C75': 'Ruy Lopez',
+            'C76': 'Ruy Lopez',
+            'C77': 'Ruy Lopez',
+            'C78': 'Ruy Lopez',
+            'C79': 'Ruy Lopez',
+            'C80': 'Ruy Lopez',
+            'C81': 'Ruy Lopez',
+            'C82': 'Ruy Lopez',
+            'C83': 'Ruy Lopez',
+            'C84': 'Ruy Lopez',
+            'C85': 'Ruy Lopez',
+            'C86': 'Ruy Lopez',
+            'C87': 'Ruy Lopez',
+            'C88': 'Ruy Lopez',
+            'C89': 'Ruy Lopez',
+            'C90': 'Ruy Lopez',
+            'C91': 'Ruy Lopez',
+            'C92': 'Ruy Lopez',
+            'C93': 'Ruy Lopez',
+            'C94': 'Ruy Lopez',
+            'C95': 'Ruy Lopez',
+            'C96': 'Ruy Lopez',
+            'C97': 'Ruy Lopez',
+            'C98': 'Ruy Lopez',
+            'C99': 'Ruy Lopez',
+            'D00': 'Queen\'s Pawn Game',
+            'D01': 'Queen\'s Pawn Game',
+            'D02': 'Queen\'s Pawn Game',
+            'D03': 'Queen\'s Pawn Game',
+            'D04': 'Queen\'s Pawn Game',
+            'D05': 'Queen\'s Pawn Game',
+            'D06': 'Queen\'s Gambit',
+            'D07': 'Queen\'s Gambit',
+            'D08': 'Queen\'s Gambit',
+            'D09': 'Queen\'s Gambit',
+            'D10': 'Queen\'s Gambit',
+            'D11': 'Queen\'s Gambit',
+            'D12': 'Queen\'s Gambit',
+            'D13': 'Queen\'s Gambit',
+            'D14': 'Queen\'s Gambit',
+            'D15': 'Queen\'s Gambit',
+            'D16': 'Queen\'s Gambit',
+            'D17': 'Queen\'s Gambit',
+            'D18': 'Queen\'s Gambit',
+            'D19': 'Queen\'s Gambit',
+            'D20': 'Queen\'s Gambit',
+            'D21': 'Queen\'s Gambit',
+            'D22': 'Queen\'s Gambit',
+            'D23': 'Queen\'s Gambit',
+            'D24': 'Queen\'s Gambit',
+            'D25': 'Queen\'s Gambit',
+            'D26': 'Queen\'s Gambit',
+            'D27': 'Queen\'s Gambit',
+            'D28': 'Queen\'s Gambit',
+            'D29': 'Queen\'s Gambit',
+            'D30': 'Queen\'s Gambit',
+            'D31': 'Queen\'s Gambit',
+            'D32': 'Queen\'s Gambit',
+            'D33': 'Queen\'s Gambit',
+            'D34': 'Queen\'s Gambit',
+            'D35': 'Queen\'s Gambit',
+            'D36': 'Queen\'s Gambit',
+            'D37': 'Queen\'s Gambit',
+            'D38': 'Queen\'s Gambit',
+            'D39': 'Queen\'s Gambit',
+            'D40': 'Queen\'s Gambit',
+            'D41': 'Queen\'s Gambit',
+            'D42': 'Queen\'s Gambit',
+            'D43': 'Queen\'s Gambit',
+            'D44': 'Queen\'s Gambit',
+            'D45': 'Queen\'s Gambit',
+            'D46': 'Queen\'s Gambit',
+            'D47': 'Queen\'s Gambit',
+            'D48': 'Queen\'s Gambit',
+            'D49': 'Queen\'s Gambit',
+            'D50': 'Queen\'s Gambit',
+            'D51': 'Queen\'s Gambit',
+            'D52': 'Queen\'s Gambit',
+            'D53': 'Queen\'s Gambit',
+            'D54': 'Queen\'s Gambit',
+            'D55': 'Queen\'s Gambit',
+            'D56': 'Queen\'s Gambit',
+            'D57': 'Queen\'s Gambit',
+            'D58': 'Queen\'s Gambit',
+            'D59': 'Queen\'s Gambit',
+            'D60': 'Queen\'s Gambit',
+            'D61': 'Queen\'s Gambit',
+            'D62': 'Queen\'s Gambit',
+            'D63': 'Queen\'s Gambit',
+            'D64': 'Queen\'s Gambit',
+            'D65': 'Queen\'s Gambit',
+            'D66': 'Queen\'s Gambit',
+            'D67': 'Queen\'s Gambit',
+            'D68': 'Queen\'s Gambit',
+            'D69': 'Queen\'s Gambit',
+            'D70': 'Neo-Grünfeld',
+            'D71': 'Neo-Grünfeld',
+            'D72': 'Neo-Grünfeld',
+            'D73': 'Neo-Grünfeld',
+            'D74': 'Neo-Grünfeld',
+            'D75': 'Neo-Grünfeld',
+            'D76': 'Neo-Grünfeld',
+            'D77': 'Neo-Grünfeld',
+            'D78': 'Neo-Grünfeld',
+            'D79': 'Neo-Grünfeld',
+            'D80': 'Grünfeld',
+            'D81': 'Grünfeld',
+            'D82': 'Grünfeld',
+            'D83': 'Grünfeld',
+            'D84': 'Grünfeld',
+            'D85': 'Grünfeld',
+            'D86': 'Grünfeld',
+            'D87': 'Grünfeld',
+            'D88': 'Grünfeld',
+            'D89': 'Grünfeld',
+            'D90': 'Grünfeld',
+            'D91': 'Grünfeld',
+            'D92': 'Grünfeld',
+            'D93': 'Grünfeld',
+            'D94': 'Grünfeld',
+            'D95': 'Grünfeld',
+            'D96': 'Grünfeld',
+            'D97': 'Grünfeld',
+            'D98': 'Grünfeld',
+            'D99': 'Grünfeld',
+            'E00': 'Queen\'s Pawn Game',
+            'E01': 'Catalan',
+            'E02': 'Catalan',
+            'E03': 'Catalan',
+            'E04': 'Catalan',
+            'E05': 'Catalan',
+            'E06': 'Catalan',
+            'E07': 'Catalan',
+            'E08': 'Catalan',
+            'E09': 'Catalan',
+            'E10': 'Queen\'s Pawn Game',
+            'E11': 'Bogo-Indian',
+            'E12': 'Queen\'s Indian',
+            'E13': 'Queen\'s Indian',
+            'E14': 'Queen\'s Indian',
+            'E15': 'Queen\'s Indian',
+            'E16': 'Queen\'s Indian',
+            'E17': 'Queen\'s Indian',
+            'E18': 'Queen\'s Indian',
+            'E19': 'Queen\'s Indian',
+            'E20': 'Nimzo-Indian',
+            'E21': 'Nimzo-Indian',
+            'E22': 'Nimzo-Indian',
+            'E23': 'Nimzo-Indian',
+            'E24': 'Nimzo-Indian',
+            'E25': 'Nimzo-Indian',
+            'E26': 'Nimzo-Indian',
+            'E27': 'Nimzo-Indian',
+            'E28': 'Nimzo-Indian',
+            'E29': 'Nimzo-Indian',
+            'E30': 'Nimzo-Indian',
+            'E31': 'Nimzo-Indian',
+            'E32': 'Nimzo-Indian',
+            'E33': 'Nimzo-Indian',
+            'E34': 'Nimzo-Indian',
+            'E35': 'Nimzo-Indian',
+            'E36': 'Nimzo-Indian',
+            'E37': 'Nimzo-Indian',
+            'E38': 'Nimzo-Indian',
+            'E39': 'Nimzo-Indian',
+            'E40': 'Nimzo-Indian',
+            'E41': 'Nimzo-Indian',
+            'E42': 'Nimzo-Indian',
+            'E43': 'Nimzo-Indian',
+            'E44': 'Nimzo-Indian',
+            'E45': 'Nimzo-Indian',
+            'E46': 'Nimzo-Indian',
+            'E47': 'Nimzo-Indian',
+            'E48': 'Nimzo-Indian',
+            'E49': 'Nimzo-Indian',
+            'E50': 'Nimzo-Indian',
+            'E51': 'Nimzo-Indian',
+            'E52': 'Nimzo-Indian',
+            'E53': 'Nimzo-Indian',
+            'E54': 'Nimzo-Indian',
+            'E55': 'Nimzo-Indian',
+            'E56': 'Nimzo-Indian',
+            'E57': 'Nimzo-Indian',
+            'E58': 'Nimzo-Indian',
+            'E59': 'Nimzo-Indian',
+            'E60': 'King\'s Indian',
+            'E61': 'King\'s Indian',
+            'E62': 'King\'s Indian',
+            'E63': 'King\'s Indian',
+            'E64': 'King\'s Indian',
+            'E65': 'King\'s Indian',
+            'E66': 'King\'s Indian',
+            'E67': 'King\'s Indian',
+            'E68': 'King\'s Indian',
+            'E69': 'King\'s Indian',
+            'E70': 'King\'s Indian',
+            'E71': 'King\'s Indian',
+            'E72': 'King\'s Indian',
+            'E73': 'King\'s Indian',
+            'E74': 'King\'s Indian',
+            'E75': 'King\'s Indian',
+            'E76': 'King\'s Indian',
+            'E77': 'King\'s Indian',
+            'E78': 'King\'s Indian',
+            'E79': 'King\'s Indian',
+            'E80': 'King\'s Indian',
+            'E81': 'King\'s Indian',
+            'E82': 'King\'s Indian',
+            'E83': 'King\'s Indian',
+            'E84': 'King\'s Indian',
+            'E85': 'King\'s Indian',
+            'E86': 'King\'s Indian',
+            'E87': 'King\'s Indian',
+            'E88': 'King\'s Indian',
+            'E89': 'King\'s Indian',
+            'E90': 'King\'s Indian',
+            'E91': 'King\'s Indian',
+            'E92': 'King\'s Indian',
+            'E93': 'King\'s Indian',
+            'E94': 'King\'s Indian',
+            'E95': 'King\'s Indian',
+            'E96': 'King\'s Indian',
+            'E97': 'King\'s Indian',
+            'E98': 'King\'s Indian',
+            'E99': 'King\'s Indian'
+        };
+        
+        // Hàm hiển thị thông báo
+        function showNotification(message) {
+            const notification = updateNotification;
+            notification.querySelector('span').textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Hàm hiển thị trạng thái API
+        function showApiStatus(message, type) {
+            apiStatus.textContent = message;
+            apiStatus.className = 'api-status ' + type;
+        }
+        
+        // Hàm ẩn trạng thái API
+        function hideApiStatus() {
+            apiStatus.style.display = 'none';
+        }
+        
+        // Hàm hiển thị loading
+        function showLoading() {
+            loadingIndicator.style.display = 'block';
+            mainContent.style.display = 'none';
+        }
+        
+        // Hàm ẩn loading
+        function hideLoading() {
+            loadingIndicator.style.display = 'none';
+            mainContent.style.display = 'flex';
+        }
+        
+        // Hàm lấy dữ liệu từ Chess.com API
+        async function fetchChessData(username) {
+            if (!username) {
+                showApiStatus('Vui lòng nhập tên người dùng Chess.com', 'error');
+                return null;
+            }
+            
+            showLoading();
+            showApiStatus('Đang lấy dữ liệu từ Chess.com...', '');
+            
+            try {
+                // Lấy thông tin hồ sơ
+                const profileResponse = await fetch(`https://api.chess.com/pub/player/${username}`);
+                
+                if (!profileResponse.ok) {
+                    throw new Error('Không tìm thấy người dùng trên Chess.com');
+                }
+                
+                const profileData = await profileResponse.json();
+                
+                // Lấy thông tin thống kê
+                const statsResponse = await fetch(`https://api.chess.com/pub/player/${username}/stats`);
+                const statsData = await statsResponse.ok ? await statsResponse.json() : {};
+                
+                // Lấy danh sách ván đấu gần đây
+                const gamesResponse = await fetch(`https://api.chess.com/pub/player/${username}/games/archives`);
+                const gamesData = await gamesResponse.ok ? await gamesResponse.json() : { archives: [] };
+                
+                // Lấy ván đấu từ tháng gần nhất
+                let recentGames = [];
+                if (gamesData.archives && gamesData.archives.length > 0) {
+                    const latestArchive = gamesData.archives[gamesData.archives.length - 1];
+                    const gamesArchiveResponse = await fetch(latestArchive);
+                    const archiveData = await gamesArchiveResponse.ok ? await gamesArchiveResponse.json() : { games: [] };
+                    recentGames = archiveData.games || [];
+                }
+                
+                // Lấy ảnh đại diện
+                let avatarUrl = profileData.avatar || `https://images.chesscomfiles.com/uploads/v1/user/${username}.png`;
+                
+                return {
+                    profile: profileData,
+                    stats: statsData,
+                    games: recentGames,
+                    avatar: avatarUrl
+                };
+                
+            } catch (error) {
+                console.error('Lỗi khi lấy dữ liệu:', error);
+                showApiStatus('Lỗi: ' + error.message, 'error');
+                hideLoading();
+                return null;
+            }
+        }
+        
+        // Hàm định dạng ngày tháng
+        function formatDate(timestamp) {
+            if (!timestamp) return 'Không rõ';
+            const date = new Date(timestamp * 1000);
+            return date.toLocaleDateString('vi-VN');
+        }
+        
+        // Hàm phân tích khai cuộc từ ván đấu
+        function analyzeOpenings(games, username) {
+            const openings = {};
+            let totalGames = 0;
+            let totalWins = 0;
+            let totalDraws = 0;
+            
+            games.forEach(game => {
+                if (!game.pgn) return;
+                
+                // Xác định kết quả
+                const result = game.white.username === username ? game.white.result : game.black.result;
+                const isWin = result === 'win';
+                const isDraw = result === 'agreed' || result === 'repetition' || result === 'stalemate' || result === 'insufficient';
+                
+                // Tìm thông tin khai cuộc từ PGN
+                let eco = 'A00';
+                let openingName = 'Không xác định';
+                
+                if (game.pgn) {
+                    const ecoMatch = game.pgn.match(/\[ECO "([^"]+)"\]/);
+                    if (ecoMatch) eco = ecoMatch[1];
+                    
+                    const openingMatch = game.pgn.match(/\[Opening "([^"]+)"\]/);
+                    if (openingMatch) openingName = openingMatch[1];
+                    
+                    // Nếu không có tên khai cuộc, tra từ ECO database
+                    if (openingName === 'Không xác định' && ecoDatabase[eco]) {
+                        openingName = ecoDatabase[eco];
+                    }
+                }
+                
+                // Thêm vào thống kê
+                if (!openings[eco]) {
+                    openings[eco] = {
+                        name: openingName,
+                        eco: eco,
+                        games: 0,
+                        wins: 0,
+                        draws: 0,
+                        losses: 0
+                    };
+                }
+                
+                openings[eco].games++;
+                totalGames++;
+                
+                if (isWin) {
+                    openings[eco].wins++;
+                    totalWins++;
+                } else if (isDraw) {
+                    openings[eco].draws++;
+                    totalDraws++;
+                } else {
+                    openings[eco].losses++;
+                }
+            });
+            
+            return {
+                openings: Object.values(openings).sort((a, b) => b.games - a.games),
+                totalGames,
+                totalWins,
+                totalDraws,
+                totalLosses: totalGames - totalWins - totalDraws
+            };
+        }
+        
+        // Hàm hiển thị thống kê khai cuộc
+        function displayOpenings(openingsData) {
+            if (!openingsData || openingsData.openings.length === 0) {
+                openingStatsList.innerHTML = '<p style="text-align: center; color: #aaa;">Chưa có dữ liệu khai cuộc</p>';
+                totalOpenings.textContent = '0';
+                winRate.textContent = '0%';
+                drawRate.textContent = '0%';
+                return;
+            }
+            
+            const filteredOpenings = filterOpeningsByTime(openingsData.openings);
+            
+            let html = '';
+            filteredOpenings.slice(0, 10).forEach(opening => {
+                const winPercent = opening.games > 0 ? (opening.wins / opening.games * 100).toFixed(1) : 0;
+                const drawPercent = opening.games > 0 ? (opening.draws / opening.games * 100).toFixed(1) : 0;
+                const lossPercent = opening.games > 0 ? (opening.losses / opening.games * 100).toFixed(1) : 0;
+                
+                html += `
+                    <div class="opening-card">
+                        <div class="opening-name">${opening.name}</div>
+                        <div class="opening-eco">ECO: ${opening.eco} | ${opening.games} ván</div>
+                        <div class="opening-stats-row">
+                            <span style="color: #4CAF50;">Thắng: ${opening.wins}</span>
+                            <span style="color: #FFC107;">Hòa: ${opening.draws}</span>
+                            <span style="color: #F44336;">Thua: ${opening.losses}</span>
+                        </div>
+                        <div class="opening-percent">
+                            <div class="opening-percent-bar win-bar" style="width: ${winPercent}%"></div>
+                        </div>
+                        <div class="opening-percent">
+                            <div class="opening-percent-bar draw-bar" style="width: ${drawPercent}%"></div>
+                        </div>
+                        <div class="opening-percent">
+                            <div class="opening-percent-bar loss-bar" style="width: ${lossPercent}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            openingStatsList.innerHTML = html;
+            
+            // Cập nhật tổng quan
+            totalOpenings.textContent = filteredOpenings.length;
+            
+            const totalGames = filteredOpenings.reduce((sum, op) => sum + op.games, 0);
+            const totalWins = filteredOpenings.reduce((sum, op) => sum + op.wins, 0);
+            const totalDraws = filteredOpenings.reduce((sum, op) => sum + op.draws, 0);
+            
+            winRate.textContent = totalGames > 0 ? ((totalWins / totalGames) * 100).toFixed(1) + '%' : '0%';
+            drawRate.textContent = totalGames > 0 ? ((totalDraws / totalGames) * 100).toFixed(1) + '%' : '0%';
+        }
+        
+        // Hàm lọc khai cuộc theo thời gian
+        function filterOpeningsByTime(openings) {
+            // Trong thực tế, cần lọc theo thời gian thực
+            // Ở đây demo trả về tất cả
+            return openings;
+        }
+        
+        // Hàm cập nhật giao diện với dữ liệu mới
+        function updateUI(data) {
+            if (!data) return;
+            
+            const { profile, stats, games, avatar } = data;
+            
+            // Cập nhật thông tin hồ sơ
+            profileImg.src = avatar;
+            username.textContent = profile.username || 'Không rõ';
+            
+            // Xác định danh hiệu
+            let title = 'Thành viên';
+            if (profile.title) title = profile.title;
+            
+            playerTitle.textContent = title;
+            
+            // Cập nhật thông tin khác
+            joinDate.textContent = formatDate(profile.joined);
+            country.textContent = profile.country ? profile.country.split('/').pop().toUpperCase() : 'Không rõ';
+            highestTitle.textContent = profile.title || 'Chưa có';
+            
+            // Cập nhật link hồ sơ
+            profileLink.href = profile.url || `https://www.chess.com/member/${profile.username}`;
+            
+            // Cập nhật ELO và thống kê
+            updateEloStats(stats);
+            
+            // Phân tích và hiển thị khai cuộc
+            const openingsAnalysis = analyzeOpenings(games, profile.username);
+            displayOpenings(openingsAnalysis);
+            
+            // Cập nhật thời gian
+            const now = new Date();
+            if (lastUpdateTime) {
+                lastUpdateTime.textContent = now.toLocaleTimeString('vi-VN') + ', ' + now.toLocaleDateString('vi-VN');
+            }
+            
+            // Hiển thị nội dung chính
+            hideLoading();
+            showApiStatus('Đã tải dữ liệu thành công!', 'success');
+            showNotification('Đã cập nhật thông tin từ Chess.com');
+            
+            // Cập nhật thanh tiến trình
+            updateProgressBars();
+        }
+        
+        // Hàm cập nhật thống kê ELO
+        function updateEloStats(stats) {
+            // Rapid
+            if (stats.chess_rapid) {
+                rapidElo.textContent = stats.chess_rapid.last?.rating || '0';
+                rapidGames.textContent = `Trò chơi: ${stats.chess_rapid.record?.win + stats.chess_rapid.record?.loss + stats.chess_rapid.record?.draw || 0}`;
+                rapidBest.textContent = `Tốt nhất: ${stats.chess_rapid.best?.rating || '0'}`;
+            } else {
+                rapidElo.textContent = '-';
+                rapidGames.textContent = 'Trò chơi: 0';
+                rapidBest.textContent = 'Tốt nhất: 0';
+            }
+            
+            // Blitz
+            if (stats.chess_blitz) {
+                blitzElo.textContent = stats.chess_blitz.last?.rating || '0';
+                blitzGames.textContent = `Trò chơi: ${stats.chess_blitz.record?.win + stats.chess_blitz.record?.loss + stats.chess_blitz.record?.draw || 0}`;
+                blitzBest.textContent = `Tốt nhất: ${stats.chess_blitz.best?.rating || '0'}`;
+            } else {
+                blitzElo.textContent = '-';
+                blitzGames.textContent = 'Trò chơi: 0';
+                blitzBest.textContent = 'Tốt nhất: 0';
+            }
+            
+            // Bullet
+            if (stats.chess_bullet) {
+                bulletElo.textContent = stats.chess_bullet.last?.rating || '0';
+                bulletGames.textContent = `Trò chơi: ${stats.chess_bullet.record?.win + stats.chess_bullet.record?.loss + stats.chess_bullet.record?.draw || 0}`;
+                bulletBest.textContent = `Tốt nhất: ${stats.chess_bullet.best?.rating || '0'}`;
+            } else {
+                bulletElo.textContent = '-';
+                bulletGames.textContent = 'Trò chơi: 0';
+                bulletBest.textContent = 'Tốt nhất: 0';
+            }
+            
+            // Daily
+            if (stats.chess_daily) {
+                dailyElo.textContent = stats.chess_daily.last?.rating || '0';
+                dailyGames.textContent = `Trò chơi: ${stats.chess_daily.record?.win + stats.chess_daily.record?.loss + stats.chess_daily.record?.draw || 0}`;
+                dailyBest.textContent = `Tốt nhất: ${stats.chess_daily.best?.rating || '0'}`;
+            } else {
+                dailyElo.textContent = '-';
+                dailyGames.textContent = 'Trò chơi: 0';
+                dailyBest.textContent = 'Tốt nhất: 0';
+            }
+        }
+        
+        // Hàm cập nhật thanh tiến trình
+        function updateProgressBars() {
+            const maxElo = 3000;
+            
+            // Rapid
+            const rapidRating = parseInt(rapidElo.textContent) || 0;
+            rapidProgress.style.width = `${(rapidRating / maxElo) * 100}%`;
+            
+            // Blitz
+            const blitzRating = parseInt(blitzElo.textContent) || 0;
+            blitzProgress.style.width = `${(blitzRating / maxElo) * 100}%`;
+            
+            // Bullet
+            const bulletRating = parseInt(bulletElo.textContent) || 0;
+            bulletProgress.style.width = `${(bulletRating / maxElo) * 100}%`;
+            
+            // Daily
+            const dailyRating = parseInt(dailyElo.textContent) || 0;
+            dailyProgress.style.width = `${(dailyRating / maxElo) * 100}%`;
+        }
+        
+        // Hàm tải dữ liệu và cập nhật UI
+        async function loadChessData() {
+            const username = chessUsernameInput.value.trim();
+            if (!username) {
+                showApiStatus('Vui lòng nhập tên người dùng', 'error');
+                return;
+            }
+            
+            currentUsername = username;
+            const data = await fetchChessData(username);
+            
+            if (data) {
+                updateUI(data);
+            }
+        }
+        
+        // Hàm bật/tắt tự động cập nhật
+        function toggleAutoRefresh() {
+            if (isAutoRefreshActive) {
+                // Tắt tự động cập nhật
+                clearInterval(autoRefreshInterval);
+                autoRefreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Bật tự động cập nhật (30s)';
+                isAutoRefreshActive = false;
+                showNotification('Đã tắt chế độ tự động cập nhật');
+            } else {
+                // Bật tự động cập nhật
+                if (!currentUsername) {
+                    showApiStatus('Vui lòng nhập tên người dùng trước', 'error');
+                    return;
+                }
+                
+                autoRefreshInterval = setInterval(async () => {
+                    const data = await fetchChessData(currentUsername);
+                    if (data) {
+                        updateUI(data);
+                    }
+                }, 30000); // 30 giây
+                
+                autoRefreshBtn.innerHTML = '<i class="fas fa-stop-circle"></i> Tắt tự động cập nhật';
+                isAutoRefreshActive = true;
+                showNotification('Đã bật chế độ tự động cập nhật mỗi 30 giây');
+            }
+        }
+        
+        // Khởi tạo tab buttons
+        function initTabs() {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentTimeFilter = btn.dataset.time;
+                    if (openingsData) {
+                        displayOpenings(openingsData);
+                    }
+                });
+            });
+        }
+        
+        // Hàm khởi tạo
+        function init() {
+            initTabs();
+            
+            // Thử tải dữ liệu mặc định
+            loadChessData();
+        }
+        
+        // Event Listeners
+        fetchDataBtn.addEventListener('click', loadChessData);
+        
+        chessUsernameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                loadChessData();
+            }
+        });
+        
+        autoRefreshBtn.addEventListener('click', toggleAutoRefresh);
+        
+        manualRefreshBtn.addEventListener('click', () => {
+            if (!currentUsername) {
+                showApiStatus('Vui lòng nhập tên người dùng trước', 'error');
+                return;
+            }
+            loadChessData();
+        });
+        
+        // Khởi tạo ứng dụng
+        init();
+        
+        console.log("Chess.com ELO & Khai Cuộc Tracker đã sẵn sàng!");
+        console.log("Nhập tên người dùng Chess.com để xem thông tin và phân tích khai cuộc!");
+        console.log("Ví dụ: hikaru, danielnaroditsky, magnuscarlsen");
+    </script>
+</body>
+</html>
